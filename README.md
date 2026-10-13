@@ -10,6 +10,24 @@ Section, speed and today's completed rounds stay on the device. Reopening return
 
 ## Build and run
 
+**[Download v0.1.0](https://github.com/blucca/eight-again/releases/tag/v0.1.0)** for a ready-built development preview:
+
+| Package | Runtime |
+| --- | --- |
+| `EightAgain-armv7.vpkg` | Compatible Fire TV hardware with Vega OS 1.2+ |
+| `EightAgain-x86_64.vpkg` | Official Vega Virtual Device on an x86_64 host |
+| `EightAgain-aarch64.vpkg` | Official Vega Virtual Device on an Apple Silicon host |
+
+Install the [Vega SDK](https://developer.amazon.com/docs/vega/0.24/install-vega-sdk.html), start the official virtual device, and install the package matching its architecture. For an x86_64 virtual device:
+
+```sh
+vega virtual-device start
+vega device install-app -p EightAgain-x86_64.vpkg -d VirtualDevice
+vega device launch-app --appName io.github.blucca.eightagain.main -d VirtualDevice
+```
+
+For hardware, follow Amazon's [Developer Mode setup](https://developer.amazon.com/docs/vega/0.24/run-apps.html), use `vega device list` to get the serial, replace `VirtualDevice` with that serial, and install `EightAgain-armv7.vpkg`. Check the model and software version under **Settings → My Fire TV → About**. Initial trial targets are the Fire TV Stick 4K Select (2025) and Fire TV Stick HD (2026, second generation) after their Vega OS 1.2 update.
+
 Use **Actions → Native television practice → Run workflow** for a clean build and an official Vega Virtual Device recording. The workflow reuses the verified [Vega TV Lab](https://github.com/blucca/vega-tv-lab) runtime: SDK 0.24.12112, React Native 0.83, Ubuntu 24.04 and KVM.
 
 With that SDK installed locally, run `bash scripts/build.sh`. The build creates the official application shell under `temp/app`, overlays the complete source and assets in this repository, and produces VPKG files. Install the matching architecture on a compatible Vega device.
@@ -25,13 +43,13 @@ The build uses the [documented React Native 0.83 storage alias](https://develope
 - Chapter changes, replay and media keys use the supported `currentTime`, `play()` and `pause()` operations. Section completion follows the native media clock.
 - Select activates a focused button; the D-pad moves focus. Play/pause and seek keys also work through the platform remote event API.
 
-The official simulator is the current runtime acceptance environment. A hardware trial requires the actual Fire TV model, Vega OS 1.2, and installation using the Vega SDK. Appstore distribution includes a separate compatible-device review. [Platform field notes](evidence/platform-notes.md) record the runtime, media and storage findings.
+The official simulator is the current runtime acceptance environment. The [recorded acceptance run](https://github.com/blucca/eight-again/actions/runs/38470172329) shows the complete practice cycle, both speeds and actual playback in a new process with the saved second section, 1× speed and completed round. A hardware trial requires the actual Fire TV model, Vega OS 1.2+, and installation using the Vega SDK. Teacher delivery through Amazon Live App Testing is the next distribution step. Appstore distribution includes a compatible-device review. [Platform field notes](evidence/platform-notes.md) record the runtime, media and storage findings.
 
 ## A teacher's practice pack
 
 Start with one short solo exercise, three section names and their time ranges. For a class trial, email [belgialucca@gmail.com](mailto:belgialucca@gmail.com) with your dance style and Fire TV model. We agree the clip's trial-use permission and teacher credit, then prepare the pack within two working days. Two adult learners can try the same exercise on two separate days.
 
-The trial pack is free. The proposed student price for the future app is a one-off **US$9.99**. The current preview is available through the source and SDK build route.
+The trial pack is free. The proposed student price for the future app is a one-off **US$9.99**. The current preview is available as ready-built VPKGs and complete source.
 
 For a self-built pack, place the authorized 1× and 0.75× H.264 videos under `assets/raw/`; set their paths, section times, source credit and a distinct progress key in `src/lesson.ts`. Update the lesson heading and footer credit in `src/App.tsx` and the poster in `assets/images/`. Section times always refer to the original 1× video. Keep the source clip's usage terms with the resulting pack.
 
