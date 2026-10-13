@@ -63,7 +63,8 @@ wait_event() {
 }
 wait_event seeked 1 35
 sleep 2
-WINDOW="$(xdotool search --onlyvisible --name '^Vega Virtual Device$' | head -n 1)"
+WINDOW="$(xdotool getactivewindow)"
+xdotool getwindowname "$WINDOW" > "$OUT/window-name.txt"
 xdotool windowsize --sync "$WINDOW" 1280 720
 xdotool windowmove --sync "$WINDOW" 60 70
 xdotool windowfocus --sync "$WINDOW"
@@ -71,6 +72,7 @@ sleep 2
 xdotool getwindowgeometry --shell "$WINDOW" > "$OUT/window-geometry.txt"
 shot() { ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -i "$DISPLAY" -frames:v 1 -update 1 "$OUT/$1.png"; }
 shot ready
+date +%s%3N > "$OUT/recording-start-ms.txt"
 ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -t 100 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
 RECORDER=$!
 xdotool key Return
