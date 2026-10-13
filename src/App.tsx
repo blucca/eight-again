@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Image, Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
-import {AsyncStorage, HWEvent, useTVEventHandler, useKeplerAppStateManager, useKeplerBackHandler} from '@amazon-devices/react-native-kepler';
+import {HWEvent, useTVEventHandler, useKeplerAppStateManager, useKeplerBackHandler} from '@amazon-devices/react-native-kepler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {VideoPlayer, KeplerVideoSurfaceView} from '@amazon-devices/react-native-w3cmedia';
 import {lesson, Progress, mediaTime, contentTime, sourceFor, clampToClip, clock,
   countdownMs, saveKey, restoreProgress, finishRound, isComplete, tickRemaining} from './lesson';
@@ -166,12 +167,15 @@ export const App = () => {
     (async () => {
       let saved: unknown = null;
       try {saved = JSON.parse(await AsyncStorage.getItem(saveKey) || 'null');}
-      catch {if (live) update({saveError: true});}
+      catch (error) {
+        console.error('[EightAgain] Progress read failed:', String(error));
+        if (live) update({saveError: true});
+      }
       if (!live) return;
       const progress = restoreProgress(saved);
       control.current.target = lesson.clips[progress.clip].start;
       update({progress, position: control.current.target, hydrated: true, phase: isComplete(progress) ? 'complete' : 'watch'});
-      log('progress-restored');
+      log('progress-restored', {storedValue: saved});
     })();
     return () => {live = false;};
   }, []);
@@ -181,7 +185,10 @@ export const App = () => {
     const saved = JSON.stringify(progress);
     saveQueue.current = saveQueue.current.then(() => AsyncStorage.setItem(saveKey, saved))
       .then(() => {update({saveError: false}); log('progress-saved', {savedProgress: JSON.parse(saved)});})
-      .catch(() => update({saveError: true}));
+      .catch(error => {
+        console.error('[EightAgain] Progress save failed:', String(error));
+        update({saveError: true});
+      });
   }, [view.hydrated, progress]);
 
   useEffect(() => {

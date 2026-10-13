@@ -104,6 +104,7 @@ shot second-section
 xdotool key Escape
 sleep 2
 shot back-paused
+cp "$OUT/native.log" "$OUT/before-restart.log"
 vega device terminate-app --appName "$PACKAGE.main" -d VirtualDevice
 sleep 2
 vega device launch-app --appName "$PACKAGE.main" -d VirtualDevice
@@ -113,5 +114,26 @@ wait "$RECORDER"
 kill "$LOGGER" 2>/dev/null || true
 vega exec vda shell loggingctl log -v "$PACKAGE" -S today > "$OUT/native-all.log" 2>&1
 shot final
+python3 - "$OUT" <<'PY'
+import json, sys
+from pathlib import Path
+out = Path(sys.argv[1])
+def events(path):
+    return [json.JSONDecoder().raw_decode(line.split('[EightAgain] ', 1)[1])[0]
+            for line in path.read_text().splitlines()
+            if '[EightAgain] {' in line]
+before = events(out / 'before-restart.log')
+after = events(out / 'native.log')
+saved_event = [e for e in before if e['event'] == 'progress-saved'][-1]
+saved = saved_event['savedProgress']
+assert saved['clip'] == 1 and saved['speed'] == 1 and saved['rounds'] == [1, 0, 0], saved
+restored = [e for e in after if e['event'] == 'seeked'][-1]
+assert restored['wallMs'] > saved_event['wallMs'], restored
+for key in ('clip', 'speed', 'rounds'):
+    assert restored[key] == saved[key], (key, saved, restored)
+assert abs(restored['contentTime'] - 48) < 0.15, restored
+(out / 'progress-check.json').write_text(json.dumps({'saved': saved, 'restored': restored}, indent=2) + '\n')
+print('Cross-process section, speed, round count and media position: PASS')
+PY
 vega virtual-device stop
 printf 'Native application run and remote recording completed.\n'
