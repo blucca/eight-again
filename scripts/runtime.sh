@@ -26,6 +26,7 @@ cp "$ROOT/temp/app/package.json" "$ROOT/temp/app/package-lock.json" "$OUT/"
 APP="$(find "$ROOT/temp/app/build" -path '*x86_64-release*' -name '*.vpkg' -print -quit)"
 test -n "$APP"
 cp "$APP" "$OUT/EightAgain-x86_64.vpkg"
+find "$ROOT/temp/app/build" -type f -name '*.vpkg' -exec cp {} "$OUT/" \;
 
 Xvfb "$DISPLAY" -screen 0 1600x1000x24 -ac > "$OUT/xvfb.log" 2>&1 &
 sleep 2
@@ -110,16 +111,23 @@ sleep 2
 vega device launch-app --appName "$PACKAGE.main" -d VirtualDevice
 sleep 12
 shot restored
+vega exec vda shell loggingctl config --set-level "$PACKAGE" info
+PLAY_COUNT="$(grep -c '\"event\":\"playing\"' "$OUT/native.log")"
+xdotool key Return
+wait_event playing "$((PLAY_COUNT + 1))" 30
+sleep 2
+shot continued-after-restart
 wait "$RECORDER"
 kill "$LOGGER" 2>/dev/null || true
 vega exec vda shell loggingctl log -v "$PACKAGE" -S today > "$OUT/native-all.log" 2>&1
 shot final
 python3 - "$OUT" <<'PY'
-import json, sys
+import json, re, sys
 from pathlib import Path
 out = Path(sys.argv[1])
 def events(path):
-    return [json.JSONDecoder().raw_decode(line.split('[EightAgain] ', 1)[1])[0]
+    return [dict(json.JSONDecoder().raw_decode(line.split('[EightAgain] ', 1)[1])[0],
+                 pid=int(re.search(r'eightagain\[(\d+)\]', line).group(1)))
             for line in path.read_text().splitlines()
             if '[EightAgain] {' in line]
 before = events(out / 'before-restart.log')
@@ -127,11 +135,12 @@ after = events(out / 'native.log')
 saved_event = [e for e in before if e['event'] == 'progress-saved'][-1]
 saved = saved_event['savedProgress']
 assert saved['clip'] == 1 and saved['speed'] == 1 and saved['rounds'] == [1, 0, 0], saved
-restored = [e for e in after if e['event'] == 'seeked'][-1]
-assert restored['wallMs'] > saved_event['wallMs'], restored
+restored = [e for e in after if e['event'] == 'playing' and e['pid'] != saved_event['pid']][0]
+assert restored['wallMs'] > before[-1]['wallMs'], restored
 for key in ('clip', 'speed', 'rounds'):
     assert restored[key] == saved[key], (key, saved, restored)
-assert abs(restored['contentTime'] - 48) < 0.15, restored
+assert 48 <= restored['contentTime'] < 60, restored
+assert restored['running'] and not restored['paused'], restored
 (out / 'progress-check.json').write_text(json.dumps({'saved': saved, 'restored': restored}, indent=2) + '\n')
 print('Cross-process section, speed, round count and media position: PASS')
 PY

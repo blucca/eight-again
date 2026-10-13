@@ -13,7 +13,7 @@ const colors = {
 type Phase = 'watch' | 'countdown' | 'practice' | 'complete';
 type PracticeView = {
   progress: Progress; phase: Phase; remainingMs: number; position: number;
-  running: boolean; busy: boolean; ready: boolean; hydrated: boolean;
+  running: boolean; busy: boolean; ready: boolean; hydrated: boolean; hasFrame: boolean;
   error: string; saveError: boolean; focus: string;
 };
 
@@ -34,7 +34,7 @@ export const App = () => {
   const backHandler = useKeplerBackHandler();
   const [view, setView] = useState<PracticeView>({
     progress: restoreProgress(null), phase: 'watch', remainingMs: 0, position: lesson.clips[0].start,
-    running: false, busy: true, ready: false, hydrated: false, error: '', saveError: false, focus: 'play',
+    running: false, busy: true, ready: false, hydrated: false, hasFrame: false, error: '', saveError: false, focus: 'play',
   });
   const state = useRef(view);
   const playerRef = useRef<VideoPlayer | null>(null);
@@ -42,6 +42,7 @@ export const App = () => {
   const lastLog = useRef(0);
   const remoteHandler = useRef<(event: HWEvent) => void>(() => {});
   const foreground = useRef(true);
+  const storageReadable = useRef(false);
   const saveQueue = useRef(Promise.resolve());
   const {progress, phase} = view;
   const clip = lesson.clips[progress.clip];
@@ -166,7 +167,10 @@ export const App = () => {
     let live = true;
     (async () => {
       let saved: unknown = null;
-      try {saved = JSON.parse(await AsyncStorage.getItem(saveKey) || 'null');}
+      try {
+        saved = JSON.parse(await AsyncStorage.getItem(saveKey) || 'null');
+        storageReadable.current = true;
+      }
       catch (error) {
         console.error('[EightAgain] Progress read failed:', String(error));
         if (live) update({saveError: true});
@@ -181,7 +185,7 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!view.hydrated) return;
+    if (!view.hydrated || !storageReadable.current) return;
     const saved = JSON.stringify(progress);
     saveQueue.current = saveQueue.current.then(() => AsyncStorage.setItem(saveKey, saved))
       .then(() => {update({saveError: false}); log('progress-saved', {savedProgress: JSON.parse(saved)});})
@@ -280,7 +284,7 @@ export const App = () => {
       });
       listen('playing', () => {
         if (!state.current.running || state.current.phase !== 'watch') {p.pause(); return;}
-        update({busy: false, ready: true}); log('playing');
+        update({busy: false, ready: true, hasFrame: true}); log('playing');
       });
       listen('pause', () => log('pause'));
       listen('waiting', () => {update({busy: true}); log('waiting');});
@@ -309,7 +313,7 @@ export const App = () => {
     playerRef.current = null;
     control.current.initialized = false;
     control.current.playAfterSeek = false;
-    update({running: false, ready: false, busy: true});
+    update({running: false, ready: false, busy: true, hasFrame: false});
     if (p) {p.clearSurfaceHandle(handle); await p.deinitialize();}
   }
 
@@ -333,9 +337,10 @@ export const App = () => {
       <View style={styles.body}>
         <View style={styles.stageColumn}>
           <View style={styles.videoFrame}>
-            {!view.ready && <Image source={require('../assets/images/six-step-poster.jpg')} style={styles.poster} />}
             {view.hydrated && <KeplerVideoSurfaceView style={styles.video} scalingmode="fit"
               onSurfaceViewCreated={onSurfaceCreated} onSurfaceViewDestroyed={onSurfaceDestroyed} />}
+            {(!view.ready || !view.hasFrame) && <Image pointerEvents="none"
+              source={require('../assets/images/six-step-poster.jpg')} style={styles.poster} />}
             {(timed || phase === 'complete') && <View pointerEvents="none"
               style={[styles.cue, phase === 'complete' && styles.completeCue]}>
               <Text style={styles.cueTitle}>{phase === 'complete' ? 'A little progress.' : phase === 'countdown' ? 'Get ready' : 'Your turn'}</Text>
@@ -395,7 +400,7 @@ const styles = StyleSheet.create({
   body: {flexDirection: 'row', gap: 36},
   stageColumn: {width: 744},
   videoFrame: {width: 744, height: 418.5, backgroundColor: colors.ink, overflow: 'hidden'},
-  poster: {position: 'absolute', width: 744, height: 418.5},
+  poster: {position: 'absolute', width: 744, height: 418.5, zIndex: 1},
   video: {width: 744, height: 418.5, zIndex: 0},
   cue: {...StyleSheet.absoluteFillObject, zIndex: 5, backgroundColor: colors.apricot, alignItems: 'center', justifyContent: 'center'},
   completeCue: {backgroundColor: colors.sage},
