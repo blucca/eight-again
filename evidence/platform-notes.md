@@ -46,6 +46,8 @@ Stored values are the selected section, speed, date, and three section-level rou
 
 The platform's component-scoped app-state and Back hooks pause a running rehearsal. Returning to the application leaves the learner in control of resuming it.
 
+The [full-size native run](https://github.com/blucca/eight-again/actions/runs/38470172329) passed on October 14, 2026. It captured a 1280×720 virtual television, completed the first practice round, changed to section two at 1×, terminated the process and resumed that section in a different process. The new process played at 48.006 content seconds with the saved round counts `[1, 0, 0]`. The [v0.1.0 release](https://github.com/blucca/eight-again/releases/tag/v0.1.0) preserves the full 100-second screen recording, the progress result and all three VPKG architectures.
+
 ## Useful platform improvements
 
 - Keep CI installation examples aligned with a discoverable SDK release.
