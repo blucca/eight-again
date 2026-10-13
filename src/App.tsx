@@ -1,10 +1,9 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Image, Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
-import {HWEvent, useTVEventHandler, useKeplerAppStateManager, useKeplerBackHandler} from '@amazon-devices/react-native-kepler';
-import AsyncStorage from '@amazon-devices/react-native-async-storage__async-storage';
+import {AsyncStorage, HWEvent, useTVEventHandler, useKeplerAppStateManager, useKeplerBackHandler} from '@amazon-devices/react-native-kepler';
 import {VideoPlayer, KeplerVideoSurfaceView} from '@amazon-devices/react-native-w3cmedia';
 import {lesson, Progress, mediaTime, contentTime, sourceFor, clampToClip, clock,
-  countdownMs, roundsPerSection, saveKey, restoreProgress, finishRound, isComplete, tickRemaining} from './lesson';
+  countdownMs, saveKey, restoreProgress, finishRound, isComplete, tickRemaining} from './lesson';
 
 const colors = {
   floor: '#DCD7ED', ink: '#2B2C50', paper: '#FBF8FF', focus: '#6E4DD5',
@@ -102,16 +101,22 @@ export const App = () => {
 
   function watchAgain(index = state.current.progress.clip) {
     const current = state.current.progress;
-    const rounds = [...current.rounds];
-    if (rounds[index] === roundsPerSection) rounds[index] = 0;
-    update({phase: 'watch', remainingMs: 0, progress: {...current, clip: index, rounds}});
+    update({phase: 'watch', remainingMs: 0, progress: {...restoreProgress(current), clip: index}});
     seekTo(lesson.clips[index].start, true);
     log('watch-again');
   }
 
   function toggle() {
-    const p = playerRef.current, s = state.current;
+    const p = playerRef.current;
+    const s = state.current;
     if (!p || !control.current.initialized) return;
+    const today = restoreProgress(s.progress);
+    if (today.day !== s.progress.day) {
+      pause('new-day');
+      update({progress: today, phase: 'watch', remainingMs: 0});
+      watchAgain();
+      return;
+    }
     if (s.error) {
       update({error: '', busy: true, running: true, phase: 'watch'});
       control.current.target = lesson.clips[s.progress.clip].start;
@@ -147,7 +152,8 @@ export const App = () => {
 
   function beginCountdown() {
     const s = state.current;
-    if (s.phase !== 'watch' || !s.running || control.current.seeking) return;
+    if (s.phase !== 'watch' || !s.running || control.current.seeking || !s.ready ||
+        s.busy || s.error || !foreground.current) return;
     control.current.playAfterSeek = false;
     update({phase: 'countdown', remainingMs: countdownMs, busy: false,
       position: lesson.clips[s.progress.clip].end});
@@ -183,6 +189,13 @@ export const App = () => {
     const subscription = appState.addEventListener('change', next => {
       foreground.current = next === 'active';
       if (next !== 'active') pause('background');
+      else {
+        const progress = restoreProgress(state.current.progress);
+        if (progress.day !== state.current.progress.day) {
+          update({progress, phase: 'watch', remainingMs: 0});
+          seekTo(lesson.clips[progress.clip].start, false);
+        }
+      }
     });
     const blur = appState.addEventListener('blur', () => pause('blur'));
     const back = backHandler.addEventListener('hardwareBackPress', () => {
@@ -197,6 +210,7 @@ export const App = () => {
     let previous = Date.now();
     const interval = setInterval(() => {
       const now = Date.now(), s = state.current;
+      if (s.phase !== phase) return;
       const active = s.running && foreground.current && s.ready && !s.busy && !s.error;
       const remainingMs = tickRemaining(s.remainingMs, now - previous, !!active);
       previous = now;
@@ -207,7 +221,7 @@ export const App = () => {
         const section = lesson.clips[s.progress.clip];
         update({phase: 'practice', remainingMs: mediaTime(section.end - section.start, s.progress.speed) * 1000});
         log('phase-practice');
-      } else {
+      } else if (s.phase === 'practice') {
         const next = finishRound(s.progress);
         update({progress: next, remainingMs: 0, phase: isComplete(next) ? 'complete' : 'watch'});
         log('round-complete');
@@ -243,30 +257,33 @@ export const App = () => {
       if (playerRef.current !== p) return;
       p.setSurfaceHandle(handle);
       control.current.initialized = true;
-      p.addEventListener('loadedmetadata', () => {
+      function listen(event: string, handler: () => void) {
+        p.addEventListener(event, () => {if (playerRef.current === p) handler();});
+      }
+      listen('loadedmetadata', () => {
         log('loadedmetadata', {duration: p.duration, src: p.src});
         control.current.seeking = true;
         p.currentTime = mediaTime(control.current.target, state.current.progress.speed);
       });
-      p.addEventListener('seeked', () => {
+      listen('seeked', () => {
         control.current.seeking = false;
         update({busy: false, ready: true, position: contentTime(p.currentTime, state.current.progress.speed)});
         log('seeked', {target: control.current.target});
         if (control.current.playAfterSeek && state.current.running) play();
       });
-      p.addEventListener('playing', () => {
+      listen('playing', () => {
         if (!state.current.running || state.current.phase !== 'watch') {p.pause(); return;}
         update({busy: false, ready: true}); log('playing');
       });
-      p.addEventListener('pause', () => log('pause'));
-      p.addEventListener('waiting', () => {update({busy: true}); log('waiting');});
-      p.addEventListener('canplay', () => {
+      listen('pause', () => log('pause'));
+      listen('waiting', () => {update({busy: true}); log('waiting');});
+      listen('canplay', () => {
         if (!p.seeking && !control.current.seeking) update({busy: false, ready: true});
         log('canplay');
       });
-      p.addEventListener('error', () => fail(p.error?.message || 'Native media error'));
-      p.addEventListener('ended', beginCountdown);
-      p.addEventListener('timeupdate', () => {
+      listen('error', () => fail(p.error?.message || 'Native media error'));
+      listen('ended', beginCountdown);
+      listen('timeupdate', () => {
         const s = state.current;
         if (s.phase !== 'watch' || control.current.seeking) return;
         const value = contentTime(p.currentTime, s.progress.speed);

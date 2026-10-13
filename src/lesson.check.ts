@@ -25,6 +25,7 @@ assert.deepEqual(progress.rounds, [3, 3, 3]);
 assert.deepEqual(restoreProgress(progress), progress);
 assert.deepEqual(restoreProgress({...progress, day: '2000-01-01'}).rounds, [0, 0, 0]);
 assert.equal(restoreProgress({...progress, day: '2000-01-01'}).clip, 2);
+assert.deepEqual(finishRound({...progress, day: '2000-01-01'}).rounds, [0, 0, 1]);
 assert.deepEqual(restoreProgress({day: localDay(), clip: 9, speed: 4, rounds: [-1, 4, null]}),
   {day: localDay(), clip: 0, speed: 0.75, rounds: [0, 0, 0]});
 assert.equal(tickRemaining(5000, 1200, true), 3800);

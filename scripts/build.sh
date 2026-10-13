@@ -9,6 +9,5 @@ cp -r "$ROOT/assets" "$APP/assets"
 cp "$ROOT/manifest.toml" "$APP/manifest.toml"
 cd "$APP"
 vega project install @amazon-devices/react-native-w3cmedia
-vega project install @amazon-devices/react-native-async-storage__async-storage
 npm install --no-audit --no-fund
 npm run build:app

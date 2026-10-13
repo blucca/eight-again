@@ -49,6 +49,7 @@ export function restoreProgress(value: unknown, day = localDay()): Progress {
 }
 
 export function finishRound(progress: Progress): Progress {
+  progress = restoreProgress(progress);
   const rounds = [...progress.rounds];
   rounds[progress.clip] = Math.min(roundsPerSection, rounds[progress.clip] + 1);
   let clip = progress.clip;
