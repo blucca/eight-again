@@ -40,6 +40,29 @@ With that SDK installed locally, run `bash scripts/build.sh`. The build creates 
 
 The build uses the [documented React Native 0.83 storage alias](https://developer.amazon.com/docs/vega-api/0.24/react-native-async-storage.html): `@react-native-async-storage/async-storage` → `@amazon-devices/react-native-async-storage__async-storage@~2.1.0` in both dependencies and overrides.
 
+### Five-minute hardware check
+
+With the SDK connection and Developer Mode ready, install the armv7 preview using your hardware serial:
+
+```sh
+DEVICE='your-device-serial'
+vega device install-app -p EightAgain-armv7.vpkg -d "$DEVICE"
+vega device launch-app --appName io.github.blucca.eightagain.main -d "$DEVICE"
+```
+
+1. Start **Walk the steps** at **0.75×**. Watch the movement, **Get ready**, **Your turn**, then the automatic replay. Press Back to pause after the completed round appears.
+2. Select **See from above**, set **Speed 1×**, then press Back. Note the round count and wait three seconds for the save.
+3. On the same local day, terminate and reopen the process:
+
+```sh
+vega device terminate-app --appName io.github.blucca.eightagain.main -d "$DEVICE"
+vega device launch-app --appName io.github.blucca.eightagain.main -d "$DEVICE"
+```
+
+The app should reopen paused on **See from above**, at **1×**, with the recorded round count. Select **Continue practice** and check that the overhead-view section actually plays.
+
+Send **model / OS build / install result / loop result / restart result** to [belgialucca@gmail.com](mailto:belgialucca@gmail.com) or a [GitHub issue](https://github.com/blucca/eight-again/issues). An install error and its exact command output are useful results too. The [platform notes](evidence/platform-notes.md#small-local-progress) and release's `progress-check.json` show the completed virtual-device comparison.
+
 ## Native media
 
 - `VideoPlayer` and `KeplerVideoSurfaceView` use local H.264 MP4 files through URL mode.
