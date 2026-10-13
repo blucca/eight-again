@@ -1,6 +1,6 @@
-import React, {useRef, useState} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {Image, Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
-import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
+import {HWEvent, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {VideoPlayer, KeplerVideoSurfaceView} from '@amazon-devices/react-native-w3cmedia';
 import {lesson, Speed, mediaTime, contentTime, sourceFor, clampToClip, clock} from './lesson';
 
@@ -34,6 +34,7 @@ export const App = () => {
   const playerRef = useRef<VideoPlayer | null>(null);
   const state = useRef({clip: 0, speed: 0.75 as Speed, target: 29, playAfterSeek: false, initialized: false});
   const lastLog = useRef(0);
+  const remoteHandler = useRef<(event: HWEvent) => void>(() => {});
   const clip = lesson.clips[clipIndex];
 
   function log(event: string, detail: object = {}) {
@@ -50,7 +51,9 @@ export const App = () => {
     state.current.playAfterSeek = false;
     setPlaying(false);
     setBusy(false);
-    setError('Video stopped. Select Play to reload this lesson.');
+    setError(state.current.initialized
+      ? 'Video stopped. Select Play to reload this lesson.'
+      : 'Video setup stopped. Press Home, then reopen Eight Again.');
     log('error', {detail: String(problem)});
   }
 
@@ -118,7 +121,7 @@ export const App = () => {
     log('change-speed', {target: state.current.target});
   }
 
-  useTVEventHandler(event => {
+  remoteHandler.current = event => {
     if (event.eventKeyAction !== 0) return;
     log('remote', {key: event.eventType});
     if (event.eventType === 'playpause' || event.eventType === 'playPause') toggle();
@@ -130,9 +133,13 @@ export const App = () => {
       const p = playerRef.current;
       if (p && !busy) seekTo(contentTime(p.currentTime, state.current.speed) + 3, !p.paused);
     }
-  });
+  };
+  useTVEventHandler(useCallback((event: HWEvent) => remoteHandler.current(event), []));
 
   async function onSurfaceCreated(handle: string) {
+    log('surface-request', {handle, hasPlayer: !!playerRef.current});
+    // Vega's compatibility event names can announce the same surface twice.
+    if (playerRef.current) return;
     try {
       const p = new VideoPlayer();
       playerRef.current = p;
@@ -153,6 +160,10 @@ export const App = () => {
       p.addEventListener('playing', () => {setPlaying(true); setBusy(false); setReady(true); log('playing');});
       p.addEventListener('pause', () => {setPlaying(false); log('pause');});
       p.addEventListener('waiting', () => {setBusy(true); log('waiting');});
+      p.addEventListener('canplay', () => {
+        if (!p.seeking) {setBusy(false); setReady(true);}
+        log('canplay');
+      });
       p.addEventListener('error', () => fail(p.error?.message || 'Native media error'));
       p.addEventListener('timeupdate', () => {
         const value = contentTime(p.currentTime, state.current.speed);

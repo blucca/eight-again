@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT="$PWD"
 export HOME="$ROOT/temp/home" TMPDIR="$ROOT/temp/tmp"
 export NONINTERACTIVE=true VEGA_SDK_VERSION=0.24.12112 SKIP_VVD_INSTALL=false DISPLAY=:99
+export LIBGL_ALWAYS_SOFTWARE=1
 OUT="$ROOT/temp/evidence"
 mkdir -p "$HOME" "$TMPDIR" "$OUT"
 exec > >(tee "$OUT/runtime.log") 2>&1
@@ -30,7 +31,8 @@ Xvfb "$DISPLAY" -screen 0 1600x1000x24 -ac > "$OUT/xvfb.log" 2>&1 &
 sleep 2
 openbox > "$OUT/openbox.log" 2>&1 &
 sleep 2
-vega virtual-device start --no-gl-accel --display-res=1280,720 --timeout 300 > "$OUT/device.log" 2>&1
+glxinfo -B > "$OUT/host-gl.txt" 2>&1
+vega virtual-device start --display-res=1280,720 --timeout 300 > "$OUT/device.log" 2>&1
 xdotool key --clearmodifiers Return
 sleep 60
 timeout 180 vega exec vda -s emulator-5554 wait-for-device
@@ -47,33 +49,46 @@ PACKAGE=io.github.blucca.eightagain
 vega exec vda shell loggingctl config --set-level "$PACKAGE" info
 vega exec vda shell loggingctl log -v "$PACKAGE" -f > "$OUT/native.log" 2>&1 &
 LOGGER=$!
+sleep 1
 vega device launch-app --appName "$PACKAGE.main" -d VirtualDevice
 sleep 7
 xdotool windowfocus --sync "$(xdotool getactivewindow)"
 shot() { ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -i "$DISPLAY" -frames:v 1 -update 1 "$OUT/$1.png"; }
 shot ready
-ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -t 50 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
+ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -t 60 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
 RECORDER=$!
 xdotool key Return
-sleep 3
+sleep 4
 shot slow-playing
 xdotool key Return
 sleep 2
 shot paused
-xdotool key Down Return
+xdotool key Down
+sleep 1
+xdotool key Return
 sleep 3
 shot replay
-xdotool key Down Return
+xdotool key Down
+sleep 1
+xdotool key Return
 sleep 5
 shot normal-speed
-xdotool key Up Return
+xdotool key Up
+sleep 1
+xdotool key Return
 sleep 5
-xdotool key Down Down Return
-sleep 5
-shot next-section
-xdotool key Right Return
+xdotool key Down
+sleep 1
+xdotool key Down
+sleep 1
+xdotool key Return
 sleep 5
 shot third-section
+xdotool key Left
+sleep 1
+xdotool key Return
+sleep 5
+shot second-section
 wait "$RECORDER"
 kill "$LOGGER" 2>/dev/null || true
 vega exec vda shell loggingctl log -v "$PACKAGE" -S today > "$OUT/native-all.log" 2>&1
