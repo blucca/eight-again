@@ -1,6 +1,6 @@
 # Eight Again — submission material
 
-Prepared October 14, 2026 for the **Fire TV** track of Build, Ship, Shape: Amazon Developer Hackathon.
+[Submitted October 14, 2026](https://devpost.com/software/eight-again) to the **Fire TV** track of Build, Ship, Shape: Amazon Developer Hackathon, with **Vega TV Lab** entered in the Open Source Mini Challenge.
 
 ## Entry fields
 
