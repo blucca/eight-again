@@ -10,6 +10,8 @@ Eight Again is a native React Native application for **Fire TV with Vega OS 1.2*
 
 ![Eight Again playing the six-step lesson on the official Vega Virtual Device](site/native-practice.jpg)
 
+**Hear when it is your turn.** Short spoken cues mark watching, preparation, your own turn and completion. The remote pauses picture and voice together; TV volume controls the prompts. Amazon Polly creates the four MP3s during pack preparation, and the installed app plays them locally. [AWS integration and cue-generation steps](docs/aws-voice-cues.md).
+
 Section, speed and today's completed rounds stay on the device. Reopening returns to that section, ready for you to resume; a new day keeps your section and speed and starts fresh round counts. The application works with the included local media. Its source uses the platform's persistent AsyncStorage library.
 
 ## Build and run
@@ -36,7 +38,7 @@ Use **Actions → Native television practice → Run workflow** for a clean buil
 
 With that SDK installed locally, run `bash scripts/build.sh`. The build creates the official application shell under `temp/app`, overlays the complete source and assets in this repository, and produces VPKG files. Install the matching architecture on a compatible Vega device.
 
-`node --experimental-strip-types src/lesson.check.ts` checks section boundaries, the shared original/slow timeline, nine-round completion, same-day and next-day progress, and paused practice time. The native workflow also checks the saved section, speed, rounds and media position after terminating and reopening the process.
+`node --experimental-strip-types src/lesson.check.ts` checks section boundaries, the shared original/slow timeline, nine-round completion, same-day and next-day progress, paused practice time, and the current-stage voice gate. The native workflow also checks the saved section, speed, rounds and media position after terminating and reopening the process.
 
 The build uses the [documented React Native 0.83 storage alias](https://developer.amazon.com/docs/vega-api/0.24/react-native-async-storage.html): `@react-native-async-storage/async-storage` → `@amazon-devices/react-native-async-storage__async-storage@~2.1.0` in both dependencies and overrides.
 
@@ -65,7 +67,7 @@ Send **model / OS build / install result / loop result / restart result** to [be
 
 ## Native media
 
-- `VideoPlayer` and `KeplerVideoSurfaceView` use local H.264 MP4 files through URL mode.
+- `VideoPlayer` and `KeplerVideoSurfaceView` use local H.264 MP4 files through URL mode. `AudioPlayer` plays the four local Polly MP3 cues at phase transitions.
 - Vega's current W3C API lists `playbackRate` as unsupported. Each speed therefore has a real, prepared video file. Original lesson seconds map to media seconds using `content / speed`.
 - Chapter changes, replay and media keys use the supported `currentTime`, `play()` and `pause()` operations. Section completion follows the native media clock.
 - Select activates a focused button; the D-pad moves focus. Play/pause and seek keys also work through the platform remote event API.
@@ -82,6 +84,6 @@ For a self-built pack, place the authorized 1× and 0.75× H.264 videos under `a
 
 ## Sample and licenses
 
-The sample is **[Tutorial breakdance — Six Step](https://commons.wikimedia.org/wiki/File:Tutorial_breakdance_-_Six_Step.webm)** by **Neil Sweeney**, used under **[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)**. The Commons version is silent. We converted it from WebM to H.264, prepared a 0.75× version, selected three practice sections, and extracted a poster frame. The author retains the rights to the video; the sample credit describes the source material.
+The sample is **[Tutorial breakdance — Six Step](https://commons.wikimedia.org/wiki/File:Tutorial_breakdance_-_Six_Step.webm)** by **Neil Sweeney**, used under **[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)**. The Commons version is silent. We converted it from WebM to H.264, prepared a 0.75× version, selected three practice sections, and extracted a poster frame. The phase prompts are separate original text, synthesized with Amazon Polly's Joanna neural voice; the tutorial's silent soundtrack is preserved. The author retains the rights to the video; the sample credit describes the source material.
 
 Barlow Condensed and Atkinson Hyperlegible fonts use the SIL Open Font License; license texts accompany the font files. Our application and scripts use the MIT license. Amazon's generated application shell and SDK follow their upstream licenses.
