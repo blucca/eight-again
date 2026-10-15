@@ -2,6 +2,8 @@
 
 [Submitted October 14, 2026](https://devpost.com/software/eight-again) to the **Fire TV** track of Build, Ship, Shape: Amazon Developer Hackathon, with **Vega TV Lab** entered in the Open Source Mini Challenge.
 
+The formal Devpost entry retains its original 101-second YouTube film and Fire TV / Open Source selections. The repository now includes v0.1.1 with spoken prompts; the current release notes and AWS integration material below accompany that public build.
+
 ## Entry fields
 
 - **Project name:** Eight Again
@@ -188,7 +190,7 @@ Codex performed research, product and visual design, React Native implementation
 
 **Why it matters:** it gives another Vega developer a working path from source to a recorded official-runtime result. Eight Again adapts that route in its own native workflow and extends it with video-capable rendering, a complete rehearsal and cross-process progress checks. The standalone Lab probe covers Hello Vega; Eight Again carries the product-specific media acceptance.
 
-## AWS Builder Mini integration
+## AWS integration — release documentation
 
 **Amazon Polly** creates four spoken phase prompts for the actual Fire TV rehearsal: “Watch the movement,” “Ready. Make room,” “Your turn,” and the nine-round completion message. A standard-AWS-CLI generation script writes the MP3s and a public settings manifest; native `AudioPlayer` plays the bundled assets when the practice snapshot reaches the matching phase. Pause, Back, backgrounding, section changes and speed changes stop the current cue. A cue revision scopes cancelled playback errors to their original request.
 

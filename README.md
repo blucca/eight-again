@@ -6,7 +6,7 @@ Eight Again is a native React Native application for **Fire TV with Vega OS 1.2*
 
 **[Watch a complete practice round](https://blucca.github.io/eight-again/)** on the official Vega Virtual Device. Teachers can use the same page to arrange a free, three-section trial pack for an adult class.
 
-[Full narrated demonstration (1:42)](https://youtu.be/0WHImznAMeo) · [Devpost entry](https://devpost.com/software/eight-again) · [Product feedback and platform friction log](docs/submission.md#product-feedback)
+[Full narrated demonstration (1:54)](https://blucca.github.io/eight-again/eight-again-demo.mp4) · [Devpost entry](https://devpost.com/software/eight-again) · [Product feedback and platform friction log](docs/submission.md#product-feedback)
 
 ![Eight Again playing the six-step lesson on the official Vega Virtual Device](site/native-practice.jpg)
 
