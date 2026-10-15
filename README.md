@@ -16,7 +16,7 @@ Section, speed and today's completed rounds stay on the device. Reopening return
 
 ## Build and run
 
-**[Download v0.1.0](https://github.com/blucca/eight-again/releases/tag/v0.1.0)** for a ready-built development preview:
+**[Download v0.1.1](https://github.com/blucca/eight-again/releases/tag/v0.1.1)** for a ready-built development preview:
 
 | Package | Runtime |
 | --- | --- |
@@ -33,6 +33,8 @@ vega device launch-app --appName io.github.blucca.eightagain.main -d VirtualDevi
 ```
 
 For hardware, follow Amazon's [Developer Mode setup](https://developer.amazon.com/docs/vega/0.24/run-apps.html), use `vega device list` to get the serial, replace `VirtualDevice` with that serial, and install `EightAgain-armv7.vpkg`. Check the model and software version under **Settings → My Fire TV → About**. Initial trial targets are the Fire TV Stick 4K Select (2025) and Fire TV Stick HD (2026, second generation) after their Vega OS 1.2 update.
+
+The release includes four offline spoken phase prompts. In the first round, listen for “Watch the movement,” pause during “Ready. Make room,” resume, and continue through “Your turn” to the automatic replay.
 
 Use **Actions → Native television practice → Run workflow** for a clean build and an official Vega Virtual Device recording. The workflow reuses the verified [Vega TV Lab](https://github.com/blucca/vega-tv-lab) runtime: SDK 0.24.12112, React Native 0.83, Ubuntu 24.04 and KVM.
 

@@ -10,7 +10,7 @@
 - **Built with:** React Native, TypeScript, Vega OS, Fire TV, Amazon Polly, FFmpeg, GitHub Actions.
 - **Source:** https://github.com/blucca/eight-again
 - **Demo video:** https://youtu.be/0WHImznAMeo
-- **VPKG prerelease:** https://github.com/blucca/eight-again/releases/tag/v0.1.0
+- **VPKG prerelease:** https://github.com/blucca/eight-again/releases/tag/v0.1.1
 - **Practice preview and teacher invitation:** https://blucca.github.io/eight-again/
 - **Setup and testing:** https://github.com/blucca/eight-again#build-and-run
 - **Product feedback:** https://github.com/blucca/eight-again/blob/main/docs/submission.md#product-feedback

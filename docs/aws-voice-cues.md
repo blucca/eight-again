@@ -34,7 +34,11 @@ TV volume controls the cues. The original sample video remains silent.
 
 ## Runtime evidence
 
-The v0.1.1 candidate has played its bundled watch and preparation prompts on the official virtual device. Captured audio matches the bundled prompts. The workflow uses a documented 1,000-line process logging budget and checks delivered `ended` events alongside the recording. Full-routine acceptance is in progress; the published v0.1.0 release provides the earlier visual practice routine.
+The v0.1.1 candidate completed all nine rounds on the official virtual device in runs [38673327124](https://github.com/blucca/eight-again/actions/runs/38673327124) and [38674471862](https://github.com/blucca/eight-again/actions/runs/38674471862). Both recordings contain all four completed prompts and actual playback of the saved second section at 1× in a new process.
+
+The final workflow assertions exposed two recording-check boundaries: a stale saved-state log and a resume cue logged one millisecond before the resume marker. The current `scripts/verify-native.py` compares the final pre-close snapshot and the first resumed phase event; it passes on both downloaded recordings. Run `python3 scripts/verify-native.py PATH_TO_NATIVE_ARTIFACT` to repeat that check. The workflow's **Recheck recorded native practice** action also accepts an existing recording run ID.
+
+The new film and 35-second preview retain the captured app audio. Four reference MP3s were matched against the recording using waveform windows and RMS envelopes. During the first recording's 4.236-second countdown pause, a central two-second interval measured −119.8 dBFS RMS. The candidate release and formal entry update are being prepared.
 
 Native acceptance is collected by the repository's official Vega Virtual Device workflow: actual remote input, local MP3 playback, a paused preparation interval, a new-process resume and all nine rounds. The workflow captures the virtual device's audio output alongside the screen.
 

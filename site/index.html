@@ -243,7 +243,7 @@
         <h1 id="headline">Bring the lesson home.</h1>
       </div>
       <div class="intro-copy">
-        <p>One short lesson. Five minutes to move. Watch a section, give yourself room, and try it again with the TV remote.</p>
+        <p>One short lesson. Five minutes to move. Watch a section, hear when it is your turn, and try it again with the TV remote.</p>
         <a class="button" href="#recording">Watch a practice</a>
       </div>
     </section>
@@ -252,18 +252,19 @@
       <div class="screen">
         <video controls playsinline preload="metadata" poster="native-practice.jpg" aria-label="Eight Again practice, recorded in the official Vega simulator" aria-describedby="recording-caption">
           <source src="native-practice.mp4" type="video/mp4">
+          <track kind="captions" src="native-practice.vtt" srclang="en" label="English">
           <a href="native-practice.mp4">Open the practice recording</a>.
         </video>
       </div>
       <figcaption id="recording-caption">
-        <span>35-second silent recording from the official Vega simulator.</span>
+        <span>A complete practice round, with the app’s own spoken cues.</span>
         <span>Native Fire TV app running on Vega OS 1.2.</span>
       </figcaption>
     </figure>
     <p class="recording-notes"><a href="https://youtu.be/0WHImznAMeo">Watch the full narrated demo (1:42)</a> &nbsp; <a href="eight-again-demo.vtt">English captions</a></p>
     <details class="recording-notes">
       <summary>The practice, in words</summary>
-      <p>Choose one of three sections and a speed: 0.75× or 1×. Watch the teacher, then take five seconds to get into position. A timed window gives you space to practise. The lesson returns automatically, for three rounds of each section. The remote pauses the video or the practice timer. Your section and speed stay saved on the TV.</p>
+      <p>Choose one of three sections and a speed: 0.75× or 1×. Watch the teacher, then hear “Ready. Make room.” and take five seconds to get into position. “Your turn” starts a timed practice window. The lesson returns automatically, for three rounds of each section. The remote pauses picture, voice and the practice timer together. Your section and speed stay saved on the TV.</p>
     </details>
 
     <section class="practice" aria-labelledby="practice-heading">
@@ -277,12 +278,12 @@
         <li class="prepare">
           <span class="step-number" aria-hidden="true">2</span>
           <h3>Take five seconds</h3>
-          <p>A clear countdown gives you time to take your place.</p>
+          <p>Hear “Ready. Make room.” A clear countdown gives you time to take your place.</p>
         </li>
         <li>
           <span class="step-number" aria-hidden="true">3</span>
           <h3>Your turn</h3>
-          <p>Use the practice window to work through the step yourself.</p>
+          <p>Hear “Your turn” and work through the step yourself, even with your eyes away from the screen.</p>
         </li>
         <li>
           <span class="step-number" aria-hidden="true">4</span>
@@ -290,7 +291,7 @@
           <p>The lesson returns automatically. Three sections, three rounds each.</p>
         </li>
       </ol>
-      <p class="remote-note">Need a breather? Pause with the remote. Your last section and speed stay on the TV, ready for the next practice.</p>
+      <p class="remote-note">Need a breather? Pause picture and voice with the remote. TV volume controls the cues. Your last section and speed stay on the TV, ready for the next practice.</p>
     </section>
 
     <section id="teacher-trial" class="trial" aria-labelledby="trial-heading">
@@ -312,7 +313,7 @@
         <div>
           <h3>Current build</h3>
           <p>Native development preview for Vega OS 1.2+.</p>
-          <a href="https://github.com/blucca/eight-again/releases/tag/v0.1.0">Download v0.1.0 VPKGs</a>
+          <a href="https://github.com/blucca/eight-again/releases/tag/v0.1.1">Download v0.1.1 VPKGs</a>
         </div>
         <div>
           <p>Choose the armv7 package for compatible Fire TV hardware; x86_64 and aarch64 packages run on the official simulator. Installation uses the Vega SDK. Start with your exact Fire TV model and software version for a class trial.</p>
@@ -323,7 +324,7 @@
   </main>
   <footer class="footer page-width">
     <p>Built by <a href="https://blucca.github.io/">Blucca</a>, an AI-led software studio.</p>
-    <p>Sample lesson: <a href="https://commons.wikimedia.org/wiki/File:Tutorial_breakdance_-_Six_Step.webm">Six Step tutorial</a> by Neil Sweeney, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. We selected practice sections, converted the video to H.264, and prepared a 0.75× version. The source clip is silent.</p>
+    <p>Sample lesson: <a href="https://commons.wikimedia.org/wiki/File:Tutorial_breakdance_-_Six_Step.webm">Six Step tutorial</a> by Neil Sweeney, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. We selected practice sections, converted the silent video to H.264, and prepared a 0.75× version. Original phase prompts are synthesized with Amazon Polly and played locally. <a href="https://github.com/blucca/eight-again/blob/main/docs/aws-voice-cues.md">Voice integration</a>.</p>
   </footer>
 </body>
 </html>

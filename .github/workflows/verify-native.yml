@@ -1,0 +1,24 @@
+name: Recheck recorded native practice
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: Native recording workflow run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: eight-again-native
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.source_run }}
+          path: temp/evidence
+      - name: Verify recorded pause, all four cues and new-process recovery
+        run: python3 scripts/verify-native.py temp/evidence
