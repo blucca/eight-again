@@ -1,0 +1,31 @@
+{
+  "service": "Amazon Polly",
+  "region": "ap-southeast-2",
+  "voice": "Joanna",
+  "engine": "neural",
+  "language": "en-US",
+  "format": "mp3",
+  "sample_rate_hz": 24000,
+  "cues": {
+    "ready": {
+      "file": "assets/raw/cue-ready.mp3",
+      "text": "Ready. Make room.",
+      "generated_at": "2026-10-15T02:01:46.408583+00:00"
+    },
+    "practice": {
+      "file": "assets/raw/cue-practice.mp3",
+      "text": "Your turn.",
+      "generated_at": "2026-10-15T02:01:48.291091+00:00"
+    },
+    "watch": {
+      "file": "assets/raw/cue-watch.mp3",
+      "text": "Watch the movement.",
+      "generated_at": "2026-10-15T02:01:49.901851+00:00"
+    },
+    "complete": {
+      "file": "assets/raw/cue-complete.mp3",
+      "text": "Practice complete. See you tomorrow.",
+      "generated_at": "2026-10-15T02:01:51.566202+00:00"
+    }
+  }
+}

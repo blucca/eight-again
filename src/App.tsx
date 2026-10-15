@@ -2,19 +2,19 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Image, Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import {HWEvent, useTVEventHandler, useKeplerAppStateManager, useKeplerBackHandler} from '@amazon-devices/react-native-kepler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {VideoPlayer, KeplerVideoSurfaceView} from '@amazon-devices/react-native-w3cmedia';
+import {AudioPlayer, VideoPlayer, KeplerVideoSurfaceView} from '@amazon-devices/react-native-w3cmedia';
 import {lesson, Progress, mediaTime, contentTime, sourceFor, clampToClip, clock,
-  countdownMs, saveKey, restoreProgress, finishRound, isComplete, tickRemaining} from './lesson';
+  countdownMs, saveKey, restoreProgress, finishRound, isComplete, tickRemaining,
+  Phase, VoiceCue, cueForPhase, cueIsCurrent} from './lesson';
 
 const colors = {
   floor: '#DCD7ED', ink: '#2B2C50', paper: '#FBF8FF', focus: '#6E4DD5',
   soft: '#BBB2D0', muted: '#585571', apricot: '#F5A97A', sage: '#90BFAE',
 };
-type Phase = 'watch' | 'countdown' | 'practice' | 'complete';
 type PracticeView = {
   progress: Progress; phase: Phase; remainingMs: number; position: number;
   running: boolean; busy: boolean; ready: boolean; hydrated: boolean; hasFrame: boolean;
-  error: string; saveError: boolean; focus: string;
+  error: string; saveError: boolean; voiceError: boolean; focus: string;
 };
 
 function PracticeButton({id, label, action, primary, focused, onFocus}: {
@@ -34,10 +34,14 @@ export const App = () => {
   const backHandler = useKeplerBackHandler();
   const [view, setView] = useState<PracticeView>({
     progress: restoreProgress(null), phase: 'watch', remainingMs: 0, position: lesson.clips[0].start,
-    running: false, busy: true, ready: false, hydrated: false, hasFrame: false, error: '', saveError: false, focus: 'play',
+    running: false, busy: true, ready: false, hydrated: false, hasFrame: false,
+    error: '', saveError: false, voiceError: false, focus: 'play',
   });
   const state = useRef(view);
   const playerRef = useRef<VideoPlayer | null>(null);
+  const audioRef = useRef<AudioPlayer | null>(null);
+  const audioReady = useRef(false);
+  const activeCue = useRef<VoiceCue | null>(null);
   const control = useRef({target: lesson.clips[0].start, playAfterSeek: false, initialized: false, seeking: false});
   const lastLog = useRef(0);
   const remoteHandler = useRef<(event: HWEvent) => void>(() => {});
@@ -62,6 +66,7 @@ export const App = () => {
   }
 
   function fail(problem: unknown) {
+    stopCue();
     control.current.playAfterSeek = false;
     update({running: false, busy: false, error: control.current.initialized
       ? 'Video stopped. Select Play to reload this lesson.'
@@ -70,6 +75,7 @@ export const App = () => {
   }
 
   function pause(reason = 'remote') {
+    stopCue();
     control.current.playAfterSeek = false;
     update({running: false});
     playerRef.current?.pause();
@@ -80,9 +86,26 @@ export const App = () => {
     if (!playerRef.current) return;
     update({running: true});
     playerRef.current.play().catch(fail);
+    speak('watch');
+  }
+
+  function stopCue() {
+    if (activeCue.current) log('cue-stopped', {cue: activeCue.current});
+    activeCue.current = null;
+    if (audioReady.current) audioRef.current?.pause();
+  }
+
+  function speak(cue: VoiceCue) {
+    stopCue();
+    const a = audioRef.current, s = state.current;
+    if (!a || !audioReady.current || !cueIsCurrent(cue, s.phase, s.running, foreground.current)) return;
+    activeCue.current = cue;
+    a.src = `/pkg/assets/raw/cue-${cue}.mp3`;
+    log('cue-requested', {cue});
   }
 
   function seekTo(target: number, resume: boolean) {
+    stopCue();
     const p = playerRef.current, s = state.current;
     control.current.target = clampToClip(target, lesson.clips[s.progress.clip]);
     control.current.playAfterSeek = resume;
@@ -131,6 +154,7 @@ export const App = () => {
       watchAgain();
     } else if (s.phase === 'countdown' || s.phase === 'practice') {
       update({running: true});
+      speak(cueForPhase(s.phase));
       log('practice-resumed');
     } else if (!s.busy) {
       if (contentTime(p.currentTime, s.progress.speed) >= lesson.clips[s.progress.clip].end - 0.1) watchAgain();
@@ -141,6 +165,7 @@ export const App = () => {
   function changeSpeed() {
     const p = playerRef.current, s = state.current;
     if (!p || !control.current.initialized || s.busy) return;
+    stopCue();
     const speed = s.progress.speed === 0.75 ? 1 : 0.75;
     control.current.target = s.phase === 'watch'
       ? clampToClip(contentTime(p.currentTime, s.progress.speed), lesson.clips[s.progress.clip])
@@ -160,8 +185,48 @@ export const App = () => {
     update({phase: 'countdown', remainingMs: countdownMs, busy: false,
       position: lesson.clips[s.progress.clip].end});
     playerRef.current?.pause();
+    speak('ready');
     log('phase-countdown');
   }
+
+  useEffect(() => {
+    const a = new AudioPlayer();
+    audioRef.current = a;
+    let live = true;
+    const current = () => live && audioRef.current === a && activeCue.current !== null &&
+      cueIsCurrent(activeCue.current, state.current.phase, state.current.running, foreground.current);
+    const failed = (problem: unknown) => {
+      if (!live) return;
+      stopCue();
+      update({voiceError: true});
+      log('cue-error', {detail: String(problem)});
+    };
+    a.initialize().then(() => {
+      if (!live) {a.deinitialize(); return;}
+      audioReady.current = true;
+      a.autoplay = false;
+      a.addEventListener('canplay', () => {if (current()) a.play().catch(failed);});
+      a.addEventListener('playing', () => {
+        if (!current()) {a.pause(); return;}
+        update({voiceError: false});
+        log('cue-playing', {cue: activeCue.current, audioTime: a.currentTime});
+      });
+      a.addEventListener('ended', () => {
+        if (!live) return;
+        log('cue-ended', {cue: activeCue.current, audioTime: a.currentTime});
+        activeCue.current = null;
+      });
+      a.addEventListener('error', () => failed(a.error?.message || 'Audio playback failed'));
+      log('voice-ready');
+    }).catch(failed);
+    return () => {
+      live = false;
+      activeCue.current = null;
+      audioRef.current = null;
+      if (audioReady.current) {a.pause(); a.deinitialize();}
+      audioReady.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -231,12 +296,13 @@ export const App = () => {
       if (s.phase === 'countdown') {
         const section = lesson.clips[s.progress.clip];
         update({phase: 'practice', remainingMs: mediaTime(section.end - section.start, s.progress.speed) * 1000});
+        speak('practice');
         log('phase-practice');
       } else if (s.phase === 'practice') {
         const next = finishRound(s.progress);
         update({progress: next, remainingMs: 0, phase: isComplete(next) ? 'complete' : 'watch'});
         log('round-complete');
-        if (isComplete(next)) {update({running: false}); log('session-complete');}
+        if (isComplete(next)) {update({running: false}); speak('complete'); log('session-complete');}
         else seekTo(lesson.clips[next.clip].start, true);
       }
     }, 100);
@@ -309,6 +375,7 @@ export const App = () => {
   }
 
   async function onSurfaceDestroyed(handle: string) {
+    stopCue();
     const p = playerRef.current;
     playerRef.current = null;
     control.current.initialized = false;
@@ -384,8 +451,10 @@ export const App = () => {
         </Pressable>)}
       </View>
       <View style={styles.footer}>
-        <Text style={styles.help}>{view.saveError ? 'Saving paused. Keep this practice open.' : 'Progress stays on this TV. Back pauses your practice.'}</Text>
-        <Text style={styles.credit}>Video: Neil Sweeney · CC BY 3.0 · silent sample</Text>
+        <Text style={styles.help}>{view.saveError ? 'Saving paused. Keep this practice open.' : view.voiceError
+          ? 'Voice cues stopped. Follow the screen to keep practising.'
+          : 'Back pauses picture & voice. TV volume controls cues.'}</Text>
+        <Text style={styles.credit}>Video: Neil Sweeney · CC BY 3.0</Text>
       </View>
     </View>
   </View>;

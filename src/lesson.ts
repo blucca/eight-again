@@ -11,6 +11,14 @@ export const lesson = {
 };
 
 export type Speed = 1 | 0.75;
+export type Phase = 'watch' | 'countdown' | 'practice' | 'complete';
+export type VoiceCue = 'watch' | 'ready' | 'practice' | 'complete';
+
+export const cueForPhase = (phase: Phase): VoiceCue => phase === 'countdown' ? 'ready' : phase;
+
+export function cueIsCurrent(cue: VoiceCue, phase: Phase, running: boolean, foreground: boolean) {
+  return foreground && (running || phase === 'complete') && cue === cueForPhase(phase);
+}
 
 // Vega URL mode plays each prepared variant at its native rate.
 // Keep lesson positions in the teacher's original timeline.

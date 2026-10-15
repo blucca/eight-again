@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {lesson, mediaTime, contentTime, sourceFor, clampToClip, clock, localDay, restoreProgress, finishRound, isComplete, tickRemaining} from './lesson.ts';
+import {lesson, mediaTime, contentTime, sourceFor, clampToClip, clock, localDay, restoreProgress, finishRound, isComplete, tickRemaining, cueForPhase, cueIsCurrent} from './lesson.ts';
 
 for (const clip of lesson.clips) {
   assert(clip.start >= 0 && clip.end > clip.start && clip.end < 106.507);
@@ -32,4 +32,11 @@ assert.equal(tickRemaining(5000, 1200, true), 3800);
 assert.equal(tickRemaining(5000, 1200, false), 5000);
 assert.equal(tickRemaining(5000, 9000, true), 0);
 assert.equal(tickRemaining(5000, -500, true), 5000);
-console.log('Lesson timeline, nine-round practice, saved progress and paused clock pass.');
+assert.equal(cueForPhase('countdown'), 'ready');
+assert.equal(cueIsCurrent('ready', 'countdown', true, true), true);
+assert.equal(cueIsCurrent('ready', 'practice', true, true), false);
+assert.equal(cueIsCurrent('practice', 'practice', false, true), false);
+assert.equal(cueIsCurrent('watch', 'watch', true, false), false);
+assert.equal(cueIsCurrent('complete', 'complete', false, true), true);
+assert.equal(cueIsCurrent('complete', 'complete', false, false), false);
+console.log('Lesson timeline, practice, saved progress, paused clock and voice-cue gate pass.');

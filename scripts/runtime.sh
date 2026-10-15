@@ -4,8 +4,12 @@ ROOT="$PWD"
 export HOME="$ROOT/temp/home" TMPDIR="$ROOT/temp/tmp"
 export NONINTERACTIVE=true VEGA_SDK_VERSION=0.24.12112 SKIP_VVD_INSTALL=false DISPLAY=:99
 export LIBGL_ALWAYS_SOFTWARE=1
+export XDG_RUNTIME_DIR="$ROOT/temp/pulse-runtime"
+export PULSE_SERVER="unix:$XDG_RUNTIME_DIR/pulse/native" PULSE_SINK=eightagain
+export SDL_AUDIODRIVER=pulseaudio QEMU_AUDIO_DRV=pa
 OUT="$ROOT/temp/evidence"
-mkdir -p "$HOME" "$TMPDIR" "$OUT"
+mkdir -p "$HOME" "$TMPDIR" "$OUT" "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 exec > >(tee "$OUT/runtime.log") 2>&1
 cleanup() {
   status=$?
@@ -33,6 +37,9 @@ sleep 2
 openbox > "$OUT/openbox.log" 2>&1 &
 sleep 2
 glxinfo -B > "$OUT/host-gl.txt" 2>&1
+pulseaudio --start --exit-idle-time=-1 --log-target="file:$OUT/pulse.log"
+pactl load-module module-null-sink sink_name=eightagain > "$OUT/pulse-sink.txt"
+pactl set-default-sink eightagain
 vega virtual-device start --display-res=1280,720 --timeout 300 > "$OUT/device.log" 2>&1
 xdotool key --clearmodifiers Return
 sleep 60
@@ -62,6 +69,7 @@ wait_event() {
   return 1
 }
 wait_event seeked 1 35
+wait_event voice-ready 1 15
 sleep 2
 WINDOW="$(xdotool getactivewindow)"
 xdotool getwindowname "$WINDOW" > "$OUT/window-name.txt"
@@ -73,7 +81,9 @@ xdotool getwindowgeometry --shell "$WINDOW" > "$OUT/window-geometry.txt"
 shot() { ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -i "$DISPLAY" -frames:v 1 -update 1 "$OUT/$1.png"; }
 shot ready
 date +%s%3N > "$OUT/recording-start-ms.txt"
-ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -t 100 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
+ffmpeg -hide_banner -loglevel error -y -f pulse -i eightagain.monitor -c:a flac "$OUT/native-audio.flac" > "$OUT/audio-recording.log" 2>&1 &
+AUDIO_RECORDER=$!
+ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -f pulse -i eightagain.monitor -t 100 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p -c:a aac -b:a 96k "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
 RECORDER=$!
 xdotool key Return
 sleep 4
@@ -125,6 +135,13 @@ wait_event playing "$((PLAY_COUNT + 1))" 30
 sleep 2
 shot continued-after-restart
 wait "$RECORDER"
+wait_event session-complete 1 360
+wait_event cue-ended 1 10
+sleep 4
+shot completed
+pactl list sink-inputs short > "$OUT/pulse-inputs.txt"
+kill -INT "$AUDIO_RECORDER"
+wait "$AUDIO_RECORDER" || true
 kill "$LOGGER" 2>/dev/null || true
 vega exec vda shell loggingctl log -v "$PACKAGE" -S today > "$OUT/native-all.log" 2>&1
 shot final
@@ -150,6 +167,17 @@ assert 48 <= restored['contentTime'] < 60, restored
 assert restored['running'] and not restored['paused'], restored
 (out / 'progress-check.json').write_text(json.dumps({'saved': saved, 'restored': restored}, indent=2) + '\n')
 print('Cross-process section, speed, round count and media position: PASS')
+voice = [e for e in after if e['event'] == 'cue-playing']
+assert {'watch', 'ready', 'practice', 'complete'} <= {e['cue'] for e in voice}, voice
+assert all(e['running'] or e['phase'] == 'complete' for e in voice), voice
+errors = [e for e in after if e['event'] == 'cue-error']
+assert not errors, errors
+paused = next(e for e in before if e['event'] == 'practice-paused' and e['phase'] == 'countdown')
+resumed = next(e for e in before if e['event'] == 'practice-resumed' and e['wallMs'] > paused['wallMs'])
+assert not [e for e in voice if paused['wallMs'] < e['wallMs'] < resumed['wallMs']], voice
+(out / 'voice-check.json').write_text(json.dumps({'playing': voice,
+    'countdown_pause': paused, 'countdown_resume': resumed, 'errors': errors}, indent=2) + '\n')
+print('Four native voice cues, paused interval and completed routine: PASS')
 PY
 vega virtual-device stop
 printf 'Native application run and remote recording completed.\n'
