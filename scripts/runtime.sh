@@ -4,12 +4,8 @@ ROOT="$PWD"
 export HOME="$ROOT/temp/home" TMPDIR="$ROOT/temp/tmp"
 export NONINTERACTIVE=true VEGA_SDK_VERSION=0.24.12112 SKIP_VVD_INSTALL=false DISPLAY=:99
 export LIBGL_ALWAYS_SOFTWARE=1
-export XDG_RUNTIME_DIR="$ROOT/temp/pulse-runtime"
-export PULSE_SERVER="unix:$XDG_RUNTIME_DIR/pulse/native" PULSE_SINK=eightagain
-export SDL_AUDIODRIVER=pulseaudio QEMU_AUDIO_DRV=pa
 OUT="$ROOT/temp/evidence"
-mkdir -p "$HOME" "$TMPDIR" "$OUT" "$XDG_RUNTIME_DIR"
-chmod 700 "$XDG_RUNTIME_DIR"
+mkdir -p "$HOME" "$TMPDIR" "$OUT" "$ROOT/temp/pulse"
 exec > >(tee "$OUT/runtime.log") 2>&1
 cleanup() {
   status=$?
@@ -37,8 +33,12 @@ sleep 2
 openbox > "$OUT/openbox.log" 2>&1 &
 sleep 2
 glxinfo -B > "$OUT/host-gl.txt" 2>&1
-pulseaudio --start --exit-idle-time=-1 --log-target="file:$OUT/pulse.log"
-pactl load-module module-null-sink sink_name=eightagain > "$OUT/pulse-sink.txt"
+export PULSE_SERVER="unix:$ROOT/temp/pulse/native" PULSE_SINK=eightagain
+export SDL_AUDIODRIVER=pulseaudio QEMU_AUDIO_DRV=pa
+pulseaudio -n --daemonize=yes --exit-idle-time=-1 --use-pid-file=no \
+  --load="module-native-protocol-unix socket=$ROOT/temp/pulse/native auth-anonymous=1" \
+  --load="module-null-sink sink_name=eightagain" --log-target="file:$OUT/pulse.log"
+pactl info > "$OUT/pulse-info.txt"
 pactl set-default-sink eightagain
 vega virtual-device start --display-res=1280,720 --timeout 300 > "$OUT/device.log" 2>&1
 xdotool key --clearmodifiers Return

@@ -42,6 +42,7 @@ export const App = () => {
   const audioRef = useRef<AudioPlayer | null>(null);
   const audioReady = useRef(false);
   const activeCue = useRef<VoiceCue | null>(null);
+  const cueRevision = useRef(0);
   const control = useRef({target: lesson.clips[0].start, playAfterSeek: false, initialized: false, seeking: false});
   const lastLog = useRef(0);
   const remoteHandler = useRef<(event: HWEvent) => void>(() => {});
@@ -90,6 +91,7 @@ export const App = () => {
   }
 
   function stopCue() {
+    cueRevision.current++;
     if (activeCue.current) log('cue-stopped', {cue: activeCue.current});
     activeCue.current = null;
     if (audioReady.current) audioRef.current?.pause();
@@ -205,7 +207,11 @@ export const App = () => {
       if (!live) {a.deinitialize(); return;}
       audioReady.current = true;
       a.autoplay = false;
-      a.addEventListener('canplay', () => {if (current()) a.play().catch(failed);});
+      a.addEventListener('canplay', () => {
+        if (!current()) return;
+        const revision = cueRevision.current;
+        a.play().catch(problem => {if (revision === cueRevision.current) failed(problem);});
+      });
       a.addEventListener('playing', () => {
         if (!current()) {a.pause(); return;}
         update({voiceError: false});
