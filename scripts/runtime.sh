@@ -69,7 +69,6 @@ wait_event() {
   return 1
 }
 wait_event seeked 1 35
-wait_event voice-ready 1 15
 sleep 2
 WINDOW="$(xdotool getactivewindow)"
 xdotool getwindowname "$WINDOW" > "$OUT/window-name.txt"
@@ -86,6 +85,7 @@ AUDIO_RECORDER=$!
 ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -f pulse -i eightagain.monitor -t 100 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p -c:a aac -b:a 96k "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
 RECORDER=$!
 xdotool key Return
+wait_event cue-playing 1 15
 sleep 4
 shot slow-playing
 wait_event phase-countdown
