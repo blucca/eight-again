@@ -141,6 +141,17 @@ Observed October 14, 2026 with SDK 0.24.12112, CLI 1.4.4, Vega OS 1.2, React Nat
 - **Actionable suggestion:** **Important.** Put the alias, import path, profile requirement and a terminate/relaunch example together in the migration table and package-install guide.
 - **Evidence:** [migration table](https://developer.amazon.com/docs/vega/0.24/rn-migration-dependencies.html), [library-specific instructions](https://developer.amazon.com/docs/vega-api/0.24/react-native-async-storage.html), [failed direct-package build](https://github.com/blucca/eight-again/actions/runs/38460265346), [successful new-process playback check](https://github.com/blucca/eight-again/actions/runs/38466620142).
 
+#### 5. Include media logging budgets in the CI example
+
+- **Task:** capture native phase prompts and use their events to drive the remote-control acceptance run.
+- **Steps:** enable application info logs, initialize video and audio, then wait for the first voice event.
+- **Expected:** the application's structured transition events remain visible during media startup.
+- **Actual:** the process reached its 300-lines-per-second limit. The logger suppressed the one-shot startup and playing events; the recorded audio and later `cue-ended` events showed that playback had run. Two log-driven acceptance attempts stopped at their event waits.
+- **Severity:** Low — acceptance orchestration stopped while the underlying media played.
+- **Workaround:** use the documented `loggingctl config --set-rate io.github.blucca.eightagain 1000` for this CI run, alongside captured screen and audio output.
+- **Actionable suggestion:** **Nice to have.** Include the logging-rate setting and a sample suppression message in the media CI recipe, so developers can distinguish event capture from playback behavior.
+- **Evidence:** [recorded attempt](https://github.com/blucca/eight-again/actions/runs/38671124230), [LoggingCtl configuration guide](https://developer.amazon.com/docs/vega/0.24/loggingctl.html), [runtime script](https://github.com/blucca/eight-again/blob/main/scripts/runtime.sh).
+
 ### 4. For each tool, API, or SDK used in your project, how was your onboarding experience?
 
 The first complete Hello Vega CI job took **5 minutes 13 seconds**. It installed the official SDK, generated and built the template, launched the official virtual device, accepted remote input and recorded the screen. The published [Vega TV Lab](https://github.com/blucca/vega-tv-lab) preserves this route.
