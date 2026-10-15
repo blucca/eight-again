@@ -158,8 +158,8 @@ def events(path):
             if '[EightAgain] {' in line]
 before = events(out / 'before-restart.log')
 after = events(out / 'native.log')
-saved_event = [e for e in before if e['event'] == 'progress-saved'][-1]
-saved = saved_event['savedProgress']
+saved_event = [e for e in before if e['event'] == 'practice-paused' and e.get('reason') == 'back'][-1]
+saved = {key: saved_event[key] for key in ('clip', 'speed', 'rounds')}
 assert saved['clip'] == 1 and saved['speed'] == 1 and saved['rounds'] == [1, 0, 0], saved
 restored = [e for e in after if e['event'] == 'playing' and e['pid'] != saved_event['pid']][0]
 assert restored['wallMs'] > before[-1]['wallMs'], restored
@@ -167,7 +167,7 @@ for key in ('clip', 'speed', 'rounds'):
     assert restored[key] == saved[key], (key, saved, restored)
 assert 48 <= restored['contentTime'] < 60, restored
 assert restored['running'] and not restored['paused'], restored
-(out / 'progress-check.json').write_text(json.dumps({'saved': saved, 'restored': restored}, indent=2) + '\n')
+(out / 'progress-check.json').write_text(json.dumps({'before_close': saved, 'restored': restored}, indent=2) + '\n')
 print('Cross-process section, speed, round count and media position: PASS')
 voice = [e for e in after if e['event'] == 'cue-requested']
 completed = [e for e in after if e['event'] == 'cue-ended' and e.get('cue')]
