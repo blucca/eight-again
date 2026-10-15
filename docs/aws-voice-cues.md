@@ -34,7 +34,7 @@ TV volume controls the cues. The original sample video remains silent.
 
 ## Runtime evidence
 
-The v0.1.1 candidate is undergoing its native playback check in [run 38669561069](https://github.com/blucca/eight-again/actions/runs/38669561069). The published v0.1.0 release provides the earlier visual practice routine.
+The v0.1.1 candidate built and launched on the official virtual device in [run 38669561069](https://github.com/blucca/eight-again/actions/runs/38669561069). The voice-ready startup check failed; this branch is investigating native audio initialization. The published v0.1.0 release provides the earlier visual practice routine.
 
 Native acceptance is collected by the repository's official Vega Virtual Device workflow: actual remote input, local MP3 playback, a paused preparation interval, a new-process resume and all nine rounds. The workflow captures the virtual device's audio output alongside the screen.
 
