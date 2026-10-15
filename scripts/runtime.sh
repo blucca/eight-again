@@ -55,6 +55,7 @@ sleep 5
 timeout 90 vega exec vda -s emulator-5554 wait-for-device
 PACKAGE=io.github.blucca.eightagain
 vega exec vda shell loggingctl config --set-level "$PACKAGE" info
+vega exec vda shell loggingctl config --set-rate "$PACKAGE" 1000
 vega exec vda shell loggingctl log -v "$PACKAGE" -f > "$OUT/native.log" 2>&1 &
 LOGGER=$!
 sleep 1
@@ -84,6 +85,7 @@ ffmpeg -hide_banner -loglevel error -y -f pulse -i eightagain.monitor -c:a flac 
 AUDIO_RECORDER=$!
 ffmpeg -hide_banner -loglevel error -y -f x11grab -video_size 1600x1000 -framerate 15 -i "$DISPLAY" -f pulse -i eightagain.monitor -t 100 -c:v libx264 -preset ultrafast -crf 25 -pix_fmt yuv420p -c:a aac -b:a 96k "$OUT/native-practice.mp4" > "$OUT/recording.log" 2>&1 &
 RECORDER=$!
+sleep 1
 xdotool key Return
 wait_event cue-playing 1 15
 sleep 4
