@@ -146,9 +146,9 @@ Observed October 14, 2026 with SDK 0.24.12112, CLI 1.4.4, Vega OS 1.2, React Nat
 - **Task:** capture native phase prompts and use their events to drive the remote-control acceptance run.
 - **Steps:** enable application info logs, initialize video and audio, then wait for the first voice event.
 - **Expected:** the application's structured transition events remain visible during media startup.
-- **Actual:** the process reached its 300-lines-per-second limit. The logger suppressed the one-shot startup and playing events; the recorded audio and later `cue-ended` events showed that playback had run. Two log-driven acceptance attempts stopped at their event waits.
+- **Actual:** the process reached its 300-lines-per-second limit. Startup logs were suppressed. After raising the logging budget, native `playing` and `ended` messages were visible and audio was captured, while the application-level `playing` callback log stayed absent. Log-driven acceptance attempts stopped at those event waits.
 - **Severity:** Low — acceptance orchestration stopped while the underlying media played.
-- **Workaround:** use the documented `loggingctl config --set-rate io.github.blucca.eightagain 1000` for this CI run, alongside captured screen and audio output.
+- **Workaround:** use the documented `loggingctl config --set-rate io.github.blucca.eightagain 1000` for this CI run; drive cue completion checks with delivered `ended` events and compare the captured audio with the bundled prompts.
 - **Actionable suggestion:** **Nice to have.** Include the logging-rate setting and a sample suppression message in the media CI recipe, so developers can distinguish event capture from playback behavior.
 - **Evidence:** [recorded attempt](https://github.com/blucca/eight-again/actions/runs/38671124230), [LoggingCtl configuration guide](https://developer.amazon.com/docs/vega/0.24/loggingctl.html), [runtime script](https://github.com/blucca/eight-again/blob/main/scripts/runtime.sh).
 

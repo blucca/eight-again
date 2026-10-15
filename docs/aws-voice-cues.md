@@ -34,7 +34,7 @@ TV volume controls the cues. The original sample video remains silent.
 
 ## Runtime evidence
 
-The v0.1.1 candidate has played its bundled watch and preparation prompts on the official virtual device. [Run 38671124230](https://github.com/blucca/eight-again/actions/runs/38671124230) captured native audio; its event wait stopped after the process logger suppressed the playing message at 300 lines per second. The workflow now uses the documented 1,000-line process budget. Full-routine acceptance is in progress; the published v0.1.0 release provides the earlier visual practice routine.
+The v0.1.1 candidate has played its bundled watch and preparation prompts on the official virtual device. Captured audio matches the bundled prompts. The workflow uses a documented 1,000-line process logging budget and checks delivered `ended` events alongside the recording. Full-routine acceptance is in progress; the published v0.1.0 release provides the earlier visual practice routine.
 
 Native acceptance is collected by the repository's official Vega Virtual Device workflow: actual remote input, local MP3 playback, a paused preparation interval, a new-process resume and all nine rounds. The workflow captures the virtual device's audio output alongside the screen.
 
